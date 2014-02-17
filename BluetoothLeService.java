@@ -1,17 +1,11 @@
 /*
- * Copyright (C) 2013 The Android Open Source Project
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+BLE Demo 動作流程
+--
+check BLE is supported on the device -> Initializes a Bluetooth adapter -> startLeScan() -> 選取其中一裝置後stopLeScan()
+-> get Device Name , Address -> bindService() -> 從BluetoothLeService中Initializes GATT Service connection 
+-> 取得tag sensor的gatt service內容 -> 讀取 readCharacteristic -> 回傳 -> setCharacteristicNotification
+
+
  */
 
 package com.example.bluetooth.le;
