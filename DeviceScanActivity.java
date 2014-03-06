@@ -14,8 +14,7 @@
  * limitations under the License.
  */
 
-package com.example.bluetooth.le;
-
+package com.sonostar.bletool;
 import android.app.Activity;
 import android.app.ListActivity;
 import android.bluetooth.BluetoothAdapter;
@@ -37,19 +36,19 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
-import java.util.UUID;
+import java.util.concurrent.Callable;
+
+import com.sonostar.bletool.LeDeviceListAdapte.LeDeviceListAdapter;
 
 /**
  * Activity for scanning and displaying available Bluetooth LE devices.
  */
 public class DeviceScanActivity extends ListActivity {
-	
-	
     private LeDeviceListAdapter mLeDeviceListAdapter;
     private BluetoothAdapter mBluetoothAdapter;
     private boolean mScanning;
     private Handler mHandler;
-
+    Context c ;
     private static final int REQUEST_ENABLE_BT = 1;
     // Stops scanning after 10 seconds.
     private static final long SCAN_PERIOD = 10000;
@@ -57,41 +56,33 @@ public class DeviceScanActivity extends ListActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        
-        getActionBar().setTitle(R.string.title_devices);        
+        //getActionBar().setTitle(R.string.title_devices);
         mHandler = new Handler();
-
+        c= this;
         // Use this check to determine whether BLE is supported on the device.  Then you can
         // selectively disable BLE-related features.
-        //*檢查裝置是否支援BLE,若無則直接finish,下面則是判斷裝置是否支援藍芽功能,若無則也是finish
         if (!getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)) {
-            Toast.makeText(this, R.string.ble_not_supported, Toast.LENGTH_SHORT).show();
+            //Toast.makeText(this, R.string.ble_not_supported, Toast.LENGTH_SHORT).show();
             finish();
         }
 
         // Initializes a Bluetooth adapter.  For API level 18 and above, get a reference to
         // BluetoothAdapter through BluetoothManager.
-        
         final BluetoothManager bluetoothManager =
                 (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
-         //DeviceUuidFactory devicefactory =new DeviceUuidFactory (this);
-        // getActionBar().setTitle(devicefactory.getDeviceUuid().toString());
-         //devicefactory.getDeviceUuid();
-         //Toast.makeText(this,    devicefactory.getDeviceUuid().toString(), Toast.LENGTH_SHORT).show();
         mBluetoothAdapter = bluetoothManager.getAdapter();
 
         // Checks if Bluetooth is supported on the device.
         if (mBluetoothAdapter == null) {
-            Toast.makeText(this, R.string.error_bluetooth_not_supported, Toast.LENGTH_SHORT).show();
+            //Toast.makeText(this, R.string.error_bluetooth_not_supported, Toast.LENGTH_SHORT).show();
             finish();
             return;
         }
     }
-
+    
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.main, menu);
-        //增加actionbar的menu選項
         if (!mScanning) {
             menu.findItem(R.id.menu_stop).setVisible(false);
             menu.findItem(R.id.menu_scan).setVisible(true);
@@ -107,16 +98,12 @@ public class DeviceScanActivity extends ListActivity {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-    	//設定兩個menu選項的動作 scan , stop
         switch (item.getItemId()) {
             case R.id.menu_scan:
-            	//on scan 清除底下listview內容
                 mLeDeviceListAdapter.clear();
-                // 開始scan 周圍裝置
                 scanLeDevice(true);
                 break;
             case R.id.menu_stop:
-            	// 停止
                 scanLeDevice(false);
                 break;
         }
@@ -137,7 +124,7 @@ public class DeviceScanActivity extends ListActivity {
         }
 
         // Initializes list view adapter.
-        mLeDeviceListAdapter = new LeDeviceListAdapter();
+        mLeDeviceListAdapter = new LeDeviceListAdapter(c);
         setListAdapter(mLeDeviceListAdapter);
         scanLeDevice(true);
     }
@@ -155,20 +142,18 @@ public class DeviceScanActivity extends ListActivity {
     @Override
     protected void onPause() {
         super.onPause();
-        scanLeDevice(false);
+        
         mLeDeviceListAdapter.clear();
+        scanLeDevice(false);
     }
 
     @Override
     protected void onListItemClick(ListView l, View v, int position, long id) {
-    	
-    	//當itemclick時,取得裝置內容,bundle兩個參數(Device Name,Device Address)
-        final BluetoothDevice device = mLeDeviceListAdapter.getDevice(position);        
+        final BluetoothDevice device = mLeDeviceListAdapter.getDevice(position);
         if (device == null) return;
         final Intent intent = new Intent(this, DeviceControlActivity.class);
         intent.putExtra(DeviceControlActivity.EXTRAS_DEVICE_NAME, device.getName());
         intent.putExtra(DeviceControlActivity.EXTRAS_DEVICE_ADDRESS, device.getAddress());
-        //若mScanning被設置為true.確保LeScan沒有在執行,轉成false並停止scan
         if (mScanning) {
             mBluetoothAdapter.stopLeScan(mLeScanCallback);
             mScanning = false;
@@ -177,8 +162,6 @@ public class DeviceScanActivity extends ListActivity {
     }
 
     private void scanLeDevice(final boolean enable) {
-    	
-    	//開啟或結束scan動作
         if (enable) {
             // Stops scanning after a pre-defined scan period.
             mHandler.postDelayed(new Runnable() {
@@ -191,81 +174,15 @@ public class DeviceScanActivity extends ListActivity {
             }, SCAN_PERIOD);
 
             mScanning = true;
-            //開始scan裝置,找到則開始mLeScanCallback
             mBluetoothAdapter.startLeScan(mLeScanCallback);
         } else {
             mScanning = false;
-           //停止scan裝置
             mBluetoothAdapter.stopLeScan(mLeScanCallback);
         }
         invalidateOptionsMenu();
     }
 
-    // Adapter for holding devices found through scanning.
-    private class LeDeviceListAdapter extends BaseAdapter {
-        private ArrayList<BluetoothDevice> mLeDevices;
-        private LayoutInflater mInflator;
 
-        public LeDeviceListAdapter() {
-            super();
-            mLeDevices = new ArrayList<BluetoothDevice>();
-            mInflator = DeviceScanActivity.this.getLayoutInflater();
-        }
-
-        public void addDevice(BluetoothDevice device) {
-            if(!mLeDevices.contains(device)) {
-                mLeDevices.add(device);
-            }
-        }
-
-        public BluetoothDevice getDevice(int position) {
-            return mLeDevices.get(position);
-        }
-
-        public void clear() {
-            mLeDevices.clear();
-        }
-
-        @Override
-        public int getCount() {
-            return mLeDevices.size();
-        }
-
-        @Override
-        public Object getItem(int i) {
-            return mLeDevices.get(i);
-        }
-
-        @Override
-        public long getItemId(int i) {
-            return i;
-        }
-
-        @Override
-        public View getView(int i, View view, ViewGroup viewGroup) {
-            ViewHolder viewHolder;
-            // General ListView optimization code.
-            if (view == null) {
-                view = mInflator.inflate(R.layout.listitem_device, null);
-                viewHolder = new ViewHolder();
-                viewHolder.deviceAddress = (TextView) view.findViewById(R.id.device_address);
-                viewHolder.deviceName = (TextView) view.findViewById(R.id.device_name);
-                view.setTag(viewHolder);
-            } else {
-                viewHolder = (ViewHolder) view.getTag();
-            }
-
-            BluetoothDevice device = mLeDevices.get(i);
-            final String deviceName = device.getName();
-            if (deviceName != null && deviceName.length() > 0)
-                viewHolder.deviceName.setText(deviceName);
-            else
-                viewHolder.deviceName.setText(R.string.unknown_device);
-            viewHolder.deviceAddress.setText(device.getAddress());
-
-            return view;
-        }
-    }
 
     // Device scan callback.
     private BluetoothAdapter.LeScanCallback mLeScanCallback =
@@ -276,20 +193,13 @@ public class DeviceScanActivity extends ListActivity {
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() 
-                {                	
-                	//在listview中加入找到的裝置                	
+                {
                     mLeDeviceListAdapter.addDevice(device);
-                    
-                    //設定listview子內容更動
                     mLeDeviceListAdapter.notifyDataSetChanged();
                 }
             });
         }
-        
     };
 
-    static class ViewHolder {
-        TextView deviceName;
-        TextView deviceAddress;
-    }
+
 }
