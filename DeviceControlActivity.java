@@ -72,13 +72,14 @@ public class DeviceControlActivity extends ListActivity {
     private ArrayList<ArrayList<BluetoothGattCharacteristic>> mGattCharacteristics =
             new ArrayList<ArrayList<BluetoothGattCharacteristic>>();
     private boolean mConnected = false;
-    private BluetoothGattCharacteristic mNotifyCharacteristic;
+    public static  BluetoothGattCharacteristic mNotifyCharacteristic;
 
     private final String LIST_NAME = "NAME";
     private final String LIST_UUID = "UUID";
     //private final String LIST_DATA = "DATA";
     private final String CHAR_UUID = "CHAR";
     private final String CHAR_DATA = "DATA";
+    private final String NOTIFY = "NOTIFY";
     
     String[] charUUID ;
     ArrayList<ArrayList<HashMap<String, String>>> gattCharacteristicData
@@ -143,7 +144,7 @@ public class DeviceControlActivity extends ListActivity {
             	displayDataControler
             	(gattServiceUUIDString,
             			gattCharacteristicUUIDString,
-            			gattCharacteristicDataValueString);
+            			gattCharacteristicDataValueString,mNotifyCharacteristic);
         	
                 
             }
@@ -151,7 +152,7 @@ public class DeviceControlActivity extends ListActivity {
 
 		private void displayDataControler(String gattServiceUUIDString,
 				String gattCharacteristicUUIDString,
-				String gattCharacteristicDataValueString) 
+				String gattCharacteristicDataValueString,BluetoothGattCharacteristic notifycharacteristic) 
 		{
 			Intent intent = new Intent();
 			intent.setClass(DeviceControlActivity.this, ServiceCharacteristicControler.class);
@@ -161,6 +162,7 @@ public class DeviceControlActivity extends ListActivity {
 			intent.putExtra(LIST_UUID, gattServiceUUIDString);
 			intent.putExtra(CHAR_UUID, gattCharacteristicUUIDString);
 			intent.putExtra(CHAR_DATA, gattCharacteristicDataValueString);
+			ServiceCharacteristicControler.notify_Characteristic = notifycharacteristic;
 			startActivity(intent);
 			
 		}
@@ -316,11 +318,13 @@ public class DeviceControlActivity extends ListActivity {
 	                        if ((charaProp | BluetoothGattCharacteristic.PROPERTY_READ) > 0) {
 	                            // If there is an active notification on a characteristic, clear
 	                            // it first so it doesn't update the data field on the user interface.
-	                            if (mNotifyCharacteristic != null) {
+	                            if (mNotifyCharacteristic != null) 
+	                            {
 	                                mBluetoothLeService.setCharacteristicNotification(
 	                                        mNotifyCharacteristic, false);
 	                                mNotifyCharacteristic = null;
 	                            }
+	                            mNotifyCharacteristic = characteristic;
 	                            mBluetoothLeService.readCharacteristic(characteristic);
 	                        }
 	                        if ((charaProp | BluetoothGattCharacteristic.PROPERTY_NOTIFY) > 0) {
@@ -330,6 +334,7 @@ public class DeviceControlActivity extends ListActivity {
 	                        }
 	                        //Log.i("Characteristic UUID",characteristic.getUuid().toString());
 	                        gattCharacteristicUUIDString=characteristic.getUuid().toString();
+	                        mNotifyCharacteristic = characteristic;
 	                        //controlIntent.putExtra(CHAR_UUID, characteristic.getUuid().toString());
 	                    }
 			        	

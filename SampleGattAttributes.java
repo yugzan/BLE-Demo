@@ -37,6 +37,8 @@ public class SampleGattAttributes {
     
     public static String HEART_RATE_MEASUREMENT 	= "00002a37-0000-1000-8000-00805f9b34fb";
     public static String CLIENT_CHARACTERISTIC_CONFIG = "00002902-0000-1000-8000-00805f9b34fb";
+    public static String SONOSTAR_NOTIFY_UUID = SONOSTAR_NOTIFY_R;
+    
     final protected static char[] hexArray = "0123456789ABCDEF".toCharArray();
     static {
         // Sample Services.
@@ -96,8 +98,53 @@ public class SampleGattAttributes {
     
     
     
-    
-    
+    public static String getStringToHex(String strValue) {
+        byte byteData[] = null;
+        int intHex = 0;
+        String strHex = "";
+        String strReturn = "";
+        try {
+        byteData = strValue.getBytes("ISO8859-1");
+        for (int intI=0;intI<byteData.length;intI++)
+        {
+        intHex = (int)byteData[intI];
+        if (intHex<0)
+        intHex += 256;
+        if (intHex<16)
+        strHex += "0" + Integer.toHexString(intHex).toUpperCase();
+        else
+        strHex += Integer.toHexString(intHex).toUpperCase();
+        }
+        strReturn = strHex;
+
+        }
+        catch (Exception ex) {
+        ex.printStackTrace();
+        }
+        return strReturn;
+      }
+    public static String getHexToString(String strValue) {
+        int intCounts = strValue.length() / 2;
+        String strReturn = "";
+        String strHex = "";
+        int intHex = 0;
+        byte byteData[] = new byte[intCounts];
+        try {
+        for (int intI = 0; intI < intCounts; intI++) {
+        strHex = strValue.substring(0, 2);
+        strValue = strValue.substring(2);
+        intHex = Integer.parseInt(strHex, 16);
+        if (intHex > 128)
+        intHex = intHex - 256;
+        byteData[intI] = (byte) intHex;
+        }
+        strReturn = new String(byteData);
+        }
+        catch (Exception ex) {
+        ex.printStackTrace();
+        }
+        return strReturn;
+      }
     
     
     
